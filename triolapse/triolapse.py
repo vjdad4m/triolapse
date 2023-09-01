@@ -1,11 +1,12 @@
-from typing import List
+from typing import List, Union
 
 import numpy as np
 import torch
 import tqdm
 
-from game import NoThreeInLine, draw_grid
+from game import NoThreeInLine
 from nn import ResNet
+from visuals import draw_grid, draw_probabilities
 
 
 class TreeNode:
@@ -180,7 +181,6 @@ class MonteCarloTreeSearch:
 
         return action_probs, root
 
-
 def main():
     board_size = 7
     n_searches = 1600
@@ -191,8 +191,8 @@ def main():
     while not game.is_terminal():
         mcts = MonteCarloTreeSearch(game, model)
         action_probs, tree = mcts.search(n_searches=n_searches)
-        print('action probs:', action_probs)
-        
+        print('action probs: ', end="")
+        draw_probabilities(action_probs)
         action = np.random.choice(board_size ** 2, p=action_probs)
         for child in tree.children:
             if child.action == action:

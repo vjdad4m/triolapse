@@ -92,10 +92,3 @@ class NoThreeInLine:
             typically encoding the presence of game pieces or empty spaces.
         """
         return torch.tensor(self.states[-1]).unsqueeze(0).unsqueeze(0)
-
-def draw_grid(grid):
-    for row in grid:
-        row_str = "".join(map(str, list(int(r) for r in row)))
-        row_str = row_str.replace("0", "⬜")
-        row_str = row_str.replace("1", "⬛")
-        print(row_str)
