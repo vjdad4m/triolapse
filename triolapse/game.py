@@ -105,6 +105,16 @@ class NoThreeInLine:
             return 2 * self.grid_size, 1
         return n_placed, ((n_placed - self.grid_size) / self.grid_size)
 
+    def load_states(self, state_list: list):
+        """
+        Load a list of game states into the `states` attribute.
+
+        This function replaces the current game states with the provided list of states.
+
+        Args:
+            state_list (list): A list of numpy arrays representing the game states.
+        """
+        self.states = state_list
 
 def draw_grid(grid):
     for row in grid:
