@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 
 from collinear import find_collinear 
 
@@ -26,7 +27,7 @@ class NoThreeInLine:
             whether a move is legal at that position.
         """
         moves = self.states[-1] == 0
-        return moves.reshape(-1)
+        return moves.reshape(-1).astype(np.float32)
 
     def make_move(self, index: int):
         """
@@ -79,6 +80,18 @@ class NoThreeInLine:
             state_list (list): A list of numpy arrays representing the game states.
         """
         self.states = state_list
+
+    def get_state_tensor(self) -> torch.tensor:
+        """
+        Get the current game state as a tensor.
+
+        Returns:
+            torch.tensor: A tensor representing the current game state. The tensor is
+            of shape (1, 1, B, B), where B is the size of the game board.
+            The values in the tensor indicate the state of each cell on the game board,
+            typically encoding the presence of game pieces or empty spaces.
+        """
+        return torch.tensor(self.states[-1]).unsqueeze(0).unsqueeze(0)
 
 def draw_grid(grid):
     for row in grid:
