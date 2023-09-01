@@ -90,7 +90,7 @@ class TreeNode:
         return (
             f"{draw_grid(self.game.states[-1])}\n"
             f"Action: {self.action}\n"
-            f"Number of points placed: {np.sum(self.game.states[-1])}\n"
+            f"Number of points placed: {int(np.sum(self.game.states[-1]))}\n"
             f"Visit Count: {self.visit_count}\n"
             f"Cumulative Value: {self.cumulative_value}\n"
             f"Prior: {self.prior}\n"
@@ -182,7 +182,7 @@ class MonteCarloTreeSearch:
         return action_probs, root
 
 def main():
-    board_size = 7
+    board_size = int(input("Grid size: "))
     n_searches = 1600
     game = NoThreeInLine(board_size)
     model = ResNet(board_size)
@@ -198,7 +198,6 @@ def main():
             if child.action == action:
                 tree = child
                 break
-        
         game.make_move(action)
         
         print(tree)

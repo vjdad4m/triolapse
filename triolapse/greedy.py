@@ -3,7 +3,9 @@ import threading
 import time
 
 import numpy as np
-from game import NoThreeInLine, draw_grid
+
+from game import NoThreeInLine
+from visuals import draw_grid
 
 
 def generate_greedy_solution(N: int) -> (int, np.ndarray):
