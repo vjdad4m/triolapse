@@ -1,5 +1,6 @@
 import random
 import threading
+import time
 
 import numpy as np
 from game import NoThreeInLine, draw_grid
@@ -23,6 +24,7 @@ def generate_greedy_solution(N: int) -> (int, np.ndarray):
 
 
 def greedy_solution_wrapper(N, callback, _id):
+    time.sleep(4)
     while True:
         n_placed, state = generate_greedy_solution(N)
         callback((n_placed, state, _id))
@@ -41,7 +43,7 @@ def main():
             if n_placed > highest_n_placed:
                 highest_n_placed = n_placed
                 text_length = (N + len(str(n_placed))) // 2
-                print("-" * text_length, n_placed, "-" * text_length, "from:", _id)
+                print("-" * text_length, n_placed, "-" * text_length, "\tfrom:", _id)
                 draw_grid(state)
                 if highest_n_placed == 2 * N:
                     should_stop = True
