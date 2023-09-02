@@ -124,7 +124,8 @@ class MonteCarloTreeSearch:
             n_searches (int): The number of MCTS iterations to perform.
             state_list (list[np.ndarray]): List of game states to initialize the game with.
             root (TreeNode): The root node of the search tree. If None, a new tree will be created.
-
+            verbose (bool, optional): Whether to display progress and action probabilities. Default is True.
+            
         Returns:
             action_probs (numpy.ndarray): Array containing action probabilities after MCTS.
             root (TreeNode): The root node of the final search tree.
