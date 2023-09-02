@@ -116,7 +116,7 @@ class MonteCarloTreeSearch:
         self.model = model
 
     @torch.no_grad()
-    def search(self, n_searches: int = 1600, state_list: List[np.ndarray] = [], root: TreeNode = None) -> (np.ndarray, TreeNode):
+    def search(self, n_searches: int = 1600, state_list: List[np.ndarray] = [], root: TreeNode = None, verbose: bool = True) -> (np.ndarray, TreeNode):
         """
         Perform Monte Carlo Tree Search.
 
@@ -137,8 +137,13 @@ class MonteCarloTreeSearch:
         if root is None:
             root = TreeNode(self.game)
 
+        if verbose:
+            n_search_range = tqdm.trange(n_searches)
+        else:
+            n_search_range = range(n_searches)
+
         # Perform MCTS for a specified number of iterations
-        for search in tqdm.trange(n_searches):
+        for search in n_search_range:
             node = root
 
             # Selection phase: Traverse the tree to select a leaf node using UCB (Upper Confidence Bound)
