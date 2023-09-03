@@ -139,7 +139,7 @@ class MonteCarloTreeSearch:
             root = TreeNode(self.game)
 
         if verbose:
-            n_search_range = tqdm.trange(n_searches)
+            n_search_range = tqdm.trange(n_searches, leave=False)
         else:
             n_search_range = range(n_searches)
 
