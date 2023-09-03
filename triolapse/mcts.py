@@ -116,7 +116,7 @@ class MonteCarloTreeSearch:
         self.model = model
 
     @torch.no_grad()
-    def search(self, n_searches: int = 1600, state_list: List[np.ndarray] = [], root: TreeNode = None, verbose: bool = True) -> (np.ndarray, TreeNode):
+    def search(self, n_searches: int = 1600, state_list: List[np.ndarray] = [], root: TreeNode = None, verbose: bool = True, tqdm_level: int = 0) -> (np.ndarray, TreeNode):
         """
         Perform Monte Carlo Tree Search.
 
@@ -125,7 +125,8 @@ class MonteCarloTreeSearch:
             state_list (list[np.ndarray]): List of game states to initialize the game with.
             root (TreeNode): The root node of the search tree. If None, a new tree will be created.
             verbose (bool, optional): Whether to display progress and action probabilities. Default is True.
-            
+            tqdm_level (int, optional): Which level should the tqdm progressbar use (used for multiprocessing). Default is 0.
+
         Returns:
             action_probs (numpy.ndarray): Array containing action probabilities after MCTS.
             root (TreeNode): The root node of the final search tree.
@@ -139,7 +140,7 @@ class MonteCarloTreeSearch:
             root = TreeNode(self.game)
 
         if verbose:
-            n_search_range = tqdm.trange(n_searches, leave=False)
+            n_search_range = tqdm.trange(n_searches, leave=False, position=tqdm_level)
         else:
             n_search_range = range(n_searches)
 

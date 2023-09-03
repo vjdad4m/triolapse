@@ -1,5 +1,8 @@
+import time
+import multiprocessing
 from typing import List, Tuple
 
+import tqdm
 import numpy as np
 import torch
 import torch.nn as nn
@@ -12,7 +15,7 @@ from nn import ResNet
 from visuals import draw_probabilities, draw_grid
 
 
-def generate_self_play_rollout(grid_size: int, model: torch.nn.Module, n_searches: int = 1600, verbose: bool = True) -> Tuple[NoThreeInLine, List[np.ndarray]]:
+def generate_self_play_rollout(grid_size: int, model: torch.nn.Module, n_searches: int = 1600, verbose: bool = True, tqdm_level: int = 0) -> Tuple[NoThreeInLine, List[np.ndarray]]:
     """
     Generate a self-play rollout of a game using Monte Carlo Tree Search (MCTS).
 
@@ -21,6 +24,7 @@ def generate_self_play_rollout(grid_size: int, model: torch.nn.Module, n_searche
         model (torch.nn.Module): The neural network model for policy and value predictions.
         n_searches (int, optional): The number of MCTS iterations to perform. Default is 1600.
         verbose (bool, optional): Whether to display visualization (e.g., action probabilities). Default is True.
+        tqdm_level (int, optional): Which level should the tqdm progressbar use (used for multiprocessing). Default is 0.
 
     Returns:
         Tuple[NoThreeInLine, List[np.ndarray]]: A tuple containing the final game state and a list of action probabilities
@@ -32,7 +36,7 @@ def generate_self_play_rollout(grid_size: int, model: torch.nn.Module, n_searche
 
     while not game.is_terminal():
         mcts = MonteCarloTreeSearch(game, model)
-        action_probs, tree = mcts.search(n_searches=n_searches, verbose=verbose)
+        action_probs, tree = mcts.search(n_searches=n_searches, verbose=verbose, tqdm_level=tqdm_level)
         action_probabilities.append(action_probs)
 
         if verbose:
@@ -98,7 +102,7 @@ def train_model(model: nn.Module, states: torch.Tensor, action_probabilities: to
     dataset = TensorDataset(states, action_probabilities, rewards)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
-    for epoch in range(num_epochs):
+    for epoch in (tq := tqdm.trange(num_epochs)):
         total_loss = 0.0
         for batch_states, batch_probabilities, batch_rewards in dataloader:
             # Forward pass
@@ -115,40 +119,46 @@ def train_model(model: nn.Module, states: torch.Tensor, action_probabilities: to
             loss.backward()
             optimizer.step()
 
-        # Print loss for this epoch
+        # Change tqdm description to loss for this epoch
         avg_loss = total_loss / len(dataloader)
-        print(f"Epoch [{epoch + 1}/{num_epochs}] - Loss: {avg_loss:.4f}")
+        tq.set_description(f"Epoch [{epoch + 1}/{num_epochs}] - Loss: {avg_loss:.4f}")
 
     return model
+
+def self_play_worker(iter_idx: int, board_size: int, model: torch.nn.Module, n_searches: int):
+    print("Generating self-play game", iter_idx + 1)
+    time.sleep(2)
+    game, action_probabilities = generate_self_play_rollout(board_size, model, n_searches=n_searches, tqdm_level=iter_idx)
+    states, probabilities, reward = get_training_data(game, action_probabilities)
+    return states, probabilities, reward
 
 def main():
     board_size = int(input("Grid size: "))
     model = ResNet(board_size)
 
-    N_SEARCHES = 1600
-    N_SELF_PLAY = 300
+    N_WORKERS = 5
+
+    N_SEARCHES = 200 # 1600
+    N_SELF_PLAY = 10
     N_EPOCHS = 50
 
     iteration = 1
 
+    if N_WORKERS == -1:
+        N_WORKERS = multiprocessing.cpu_count()
+    multiprocessing.set_start_method('spawn')
+
     while True:
         states_list, probabilities_list, reward_list = [], [], []
 
-        for iter_idx in range(N_SELF_PLAY):
-            print("Generating self-play game", iter_idx + 1)
+        with multiprocessing.Pool(processes=N_WORKERS) as pool:
+            results = pool.starmap(self_play_worker, [(iter_idx, board_size, model, N_SEARCHES) for iter_idx in range(N_SELF_PLAY)])
 
-            game, action_probabilities = generate_self_play_rollout(board_size, model, n_searches=N_SEARCHES)
-            states, probabilities, reward = get_training_data(game, action_probabilities)
-
+        for result in results:
+            states, probabilities, reward = result
             states_list.append(states)
             probabilities_list.append(probabilities)
             reward_list.append(reward)
-
-            n_placed = game.calculate_reward()[0]
-            print("N points placed:", n_placed)
-            if n_placed == 2 * board_size:
-                draw_grid(game.states[-1])
-                exit(1)
 
         states = torch.cat(states_list)
         probabilities = torch.cat(probabilities_list)
@@ -161,7 +171,12 @@ def main():
         print("Saved iteration", iteration)
 
         train_model(model, states, probabilities, reward, num_epochs=N_EPOCHS)
+
+        game, _ = generate_self_play_rollout(board_size, model)
+        print('N placed and reward: ' + ', '.join(game.calculate_reward()))
+
         iteration += 1
+
 
 if __name__ == '__main__':
     main()
